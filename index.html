@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050608">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.png">
+<title>Snipercode — Editor Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+window.tailwind = window.tailwind || {};
+window.tailwind.config = { theme: { extend: { fontFamily: { inter: ["Inter", "sans-serif"] } } } };
+</script>
+<style>
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body{ width:100%; height:100%; margin:0; overflow:hidden; background:#050608; }
+body{ font-family:Inter,sans-serif; color:#f8fafc; background:#050608; position:relative; -webkit-user-select:none; user-select:none; }
+input, textarea{ -webkit-user-select:text; user-select:text; }
+
+/* ========================================================= AURORA ========================================================= */
+.aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.aurora::before, .aurora::after, .aurora .orb{
+  content:""; position:absolute; border-radius:50%;
+  filter: blur(90px); opacity:.55; will-change:transform;
+}
+.aurora::before{ width:60vmax; height:60vmax; background: radial-gradient(circle, rgba(6,182,212,.4), transparent 65%); top:-20vmax; left:-15vmax; animation: auroraA 38s ease-in-out infinite; }
+.aurora::after{ width:55vmax; height:55vmax; background: radial-gradient(circle, rgba(34,211,238,.28), transparent 65%); bottom:-18vmax; right:-15vmax; animation: auroraB 46s ease-in-out infinite; }
+.aurora .orb{ width:45vmax; height:45vmax; background: radial-gradient(circle, rgba(14,165,233,.25), transparent 70%); top:35%; left:30%; animation: auroraC 52s ease-in-out infinite; }
+@keyframes auroraA{ 0%,100%{ transform: translate(0,0) scale(1); } 50%{ transform: translate(6vmax,4vmax) scale(1.12); } }
+@keyframes auroraB{ 0%,100%{ transform: translate(0,0) scale(1); } 50%{ transform: translate(-5vmax,-3vmax) scale(1.15); } }
+@keyframes auroraC{ 0%,100%{ transform: translate(-3vmax,2vmax) scale(1); } 50%{ transform: translate(4vmax,-4vmax) scale(1.08); } }
+.noise{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+button, input, textarea, select{ font-family:inherit; }
+button{ -webkit-user-select:none; user-select:none; cursor:pointer; }
+.app{ position:relative; z-index:2; width:100%; height:100dvh; min-height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+.app-inner{
+  width:100%; max-width:680px; height:100%; margin:auto;
+  padding: max(6px,env(safe-area-inset-top)) 8px max(6px,env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.glass{
+  background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 50px rgba(0,0,0,.28);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+}
+.glass-accent{
+  border:1px solid rgba(6,182,212,.25);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(6,182,212,.05), 0 18px 50px rgba(0,0,0,.28), 0 0 40px rgba(6,182,212,.08);
+}
+
+/* ========================================================= HEADER ========================================================= */
+.header{
+  height:44px; min-height:44px;
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:5px; flex:0 0 auto;
+}
+.brand{ display:flex; align-items:center; gap:8px; min-width:0; position:relative; }
+.brand-logo{
+  width:32px; height:32px; flex:0 0 32px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  background: linear-gradient(145deg, rgba(6,182,212,.3), rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow: 0 0 25px rgba(6,182,212,.2), inset 0 1px rgba(255,255,255,.08);
+}
+.brand-logo::after{
+  content:""; position:absolute; inset:-50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(6,182,212,.5) 90deg, transparent 180deg, rgba(14,165,233,.5) 270deg, transparent 360deg);
+  animation: logoSpin 12s linear infinite; opacity:.6;
+}
+.brand-logo span{ font-size:14px; font-weight:800; position:relative; z-index:2; }
+@keyframes logoSpin{ to{ transform: rotate(360deg); } }
+.brand-name{ font-size:14px; line-height:15px; font-weight:800; letter-spacing:-.4px; }
+.brand-sub{ margin-top:1px; color:#64748b; font-size:5.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.header-right{ display:flex; align-items:center; gap:5px; }
+.status-badge{
+  display:flex; align-items:center; gap:5px;
+  height:24px; padding:0 8px; border-radius:7px;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+  font-size:6px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:#64748b;
+}
+.status-badge .dot{ width:6px; height:6px; border-radius:50%; background:#475569; transition:.3s ease; }
+.status-badge.ready .dot{ background:#22c55e; box-shadow: 0 0 4px #22c55e, 0 0 8px rgba(34,197,94,.6); }
+.status-badge.ready{ color:#86efac; border-color:rgba(34,197,94,.2); }
+.status-badge.loading .dot{ background:#22d3ee; box-shadow: 0 0 4px #22d3ee, 0 0 8px rgba(34,211,238,.6); animation: badgeBlink 0.8s infinite alternate; }
+.status-badge.loading{ color:#67e8f9; border-color:rgba(34,211,238,.2); }
+.status-badge.success .dot{ background:#22c55e; box-shadow: 0 0 6px #22c55e, 0 0 12px rgba(34,197,94,.8); }
+.status-badge.success{ color:#86efac; border-color:rgba(34,197,94,.3); }
+.status-badge.error .dot{ background:#ef4444; box-shadow: 0 0 6px #ef4444, 0 0 12px rgba(239,68,68,.8); }
+.status-badge.error{ color:#fca5a5; border-color:rgba(239,68,68,.3); }
+@keyframes badgeBlink{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.4; transform:scale(.85); } }
+.header-btn{
+  width:42px; height:42px; flex:0 0 42px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  color:#67e8f9; font-size:15px;
+  transition:.2s ease;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+}
+.header-btn:active{ transform:scale(.94); background:rgba(6,182,212,.13); }
+
+.save-indicator{
+  position:absolute; top:-2px; left:-2px;
+  width:8px; height:8px; border-radius:50%;
+  background:#22c55e; box-shadow: 0 0 6px #22c55e;
+  opacity:0; transition:.3s ease;
+}
+.save-indicator.show{ opacity:1; }
+
+/* ========================================================= MAIN ========================================================= */
+.main{ flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden; }
+.card{ border-radius:16px; padding:10px; flex:0 0 auto; }
+
+.section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.section-title{ font-size:7px; text-transform:uppercase; letter-spacing:.17em; color:#64748b; font-weight:800; }
+.section-name{ font-size:13px; font-weight:800; margin-top:1px; color:#e2e8f0; }
+
+/* Token rows */
+.token-row{ display:grid; grid-template-columns:minmax(0,1fr) 42px 50px; gap:5px; width:100%; margin-bottom:6px; }
+.field{
+  width:100%; min-width:0; height:42px; border-radius:11px;
+  background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.08);
+  color:#f8fafc; outline:none; padding:0 12px; font-size:12px;
+  transition:.2s ease; overflow:hidden; text-overflow:ellipsis;
+  font-family:inherit;
+}
+.field::placeholder{ color:#475569; }
+.field:focus{ border-color:rgba(6,182,212,.65); box-shadow:0 0 0 2px rgba(6,182,212,.1); }
+.field.mono{ font-family:"Courier New",monospace; font-size:11px; }
+.field.gh-token{ color:#67e8f9; }
+.small-btn{
+  height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.06);
+  color:#94a3b8; font-size:15px;
+  transition:.2s ease;
+}
+.small-btn:active{ transform:scale(.94); background:rgba(255,255,255,.08); }
+
+/* ========================================================= REPO AUTOCOMPLETE ========================================================= */
+.repo-wrap{ position:relative; margin-bottom:6px; }
+.repo-input-row{
+  display:grid; grid-template-columns:auto minmax(0,1fr) 42px;
+  align-items:center; gap:0;
+}
+.repo-prefix{
+  height:42px; padding:0 10px 0 12px;
+  display:flex; align-items:center; gap:3px;
+  background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.08);
+  border-right:none;
+  border-radius:11px 0 0 11px;
+  font-family:"Courier New",monospace; font-size:11px;
+  color:#67e8f9;
+  white-space:nowrap;
+  transition:.2s ease;
+}
+.repo-prefix.empty{ color:#475569; }
+.repo-input{
+  height:42px; width:100%; min-width:0;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.08);
+  border-left:none; border-right:none;
+  color:#f8fafc; outline:none;
+  padding:0 8px;
+  font-family:"Courier New",monospace; font-size:12px;
+  transition:.2s ease;
+}
+.repo-input::placeholder{ color:#475569; }
+.repo-input:focus{ background:rgba(0,0,0,.4); }
+.repo-input-row.focused .repo-prefix,
+.repo-input-row.focused .repo-input,
+.repo-input-row.focused .repo-btn{
+  border-color:rgba(6,182,212,.65);
+  box-shadow:0 0 0 2px rgba(6,182,212,.1);
+}
+.repo-btn{
+  height:42px; width:42px; border-radius:0 11px 11px 0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.08);
+  color:#94a3b8; font-size:14px;
+  transition:.2s ease;
+}
+.repo-btn:active{ transform:scale(.94); background:rgba(255,255,255,.08); }
+.repo-btn.loading{ color:#67e8f9; animation: spin 1s linear infinite; }
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+/* Dropdown autocomplete */
+.repo-dropdown{
+  position:absolute; top:100%; left:0; right:0; z-index:100;
+  margin-top:4px;
+  background:rgba(15,18,25,.98);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(6,182,212,.25);
+  border-radius:12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.7), 0 0 30px rgba(6,182,212,.1);
+  max-height:280px; overflow-y:auto;
+  display:none;
+  animation: dropdownIn .18s ease;
+}
+@keyframes dropdownIn{ from{ opacity:0; transform: translateY(-6px); } to{ opacity:1; transform: translateY(0); } }
+.repo-dropdown.open{ display:block; }
+.repo-dropdown::-webkit-scrollbar{ width:3px; }
+.repo-dropdown::-webkit-scrollbar-thumb{ background:rgba(6,182,212,.3); border-radius:2px; }
+.repo-option{
+  padding:11px 14px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  display:flex; align-items:center; gap:10px;
+  transition:.12s ease;
+}
+.repo-option:last-child{ border-bottom:none; }
+.repo-option:hover,
+.repo-option.active{
+  background:rgba(6,182,212,.12);
+}
+.repo-option-name{
+  font-size:11px; font-weight:800; color:#e2e8f0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  flex:1; min-width:0;
+}
+.repo-option-name .match-hl{
+  background: rgba(6,182,212,.3);
+  color:#a5f3fc;
+  border-radius:3px;
+  padding:0 2px;
+}
+.repo-option-meta{
+  display:flex; align-items:center; gap:6px;
+  flex:0 0 auto;
+}
+.repo-option-branch{
+  font-size:7px; font-weight:800;
+  background:rgba(6,182,212,.12);
+  border:1px solid rgba(6,182,212,.2);
+  border-radius:5px;
+  padding:2px 6px;
+  color:#67e8f9;
+  letter-spacing:.04em;
+}
+.repo-option-private{
+  font-size:9px; opacity:.6;
+}
+.repo-dropdown-empty{
+  padding:16px;
+  text-align:center;
+  font-size:10px; color:#64748b;
+}
+
+/* ========================================================= BUTTONS ========================================================= */
+.btn-primary{
+  width:100%; height:52px; border-radius:14px; margin-top:6px;
+  color:white; font-weight:800; font-size:11px; letter-spacing:.08em;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  border:1px solid rgba(34,211,238,.4);
+  box-shadow: 0 10px 28px rgba(6,182,212,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  transition:.15s ease;
+}
+.btn-primary:active{ transform:scale(.97); box-shadow: 0 6px 18px rgba(6,182,212,.35); }
+.btn-primary:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+/* Status row */
+.status-row{
+  display:grid; grid-template-columns: 24px minmax(0,1fr) 24px;
+  align-items:center; gap:8px; margin-top:8px;
+}
+.status-dot{
+  width:14px; height:14px; border-radius:50%;
+  background:#475569; box-shadow: inset 0 1px 2px rgba(255,255,255,.12);
+  transition:.35s ease;
+  flex:0 0 14px; justify-self:center;
+}
+.status-dot.loading{ background:#22d3ee; box-shadow: 0 0 6px #22d3ee, 0 0 16px #22d3ee, 0 0 32px rgba(34,211,238,.5); animation: dotPulse 1.35s infinite; }
+.status-dot.success{ background:#22c55e; box-shadow: 0 0 6px #22c55e, 0 0 16px #22c55e, 0 0 32px rgba(34,197,94,.55); }
+.status-dot.error{ background:#ef4444; box-shadow: 0 0 6px #ef4444, 0 0 16px #ef4444, 0 0 32px rgba(239,68,68,.55); }
+@keyframes dotPulse{ 0%,100%{ transform:scale(.85); } 50%{ transform:scale(1.15); } }
+
+.btn-view{
+  height:46px; border-radius:12px;
+  color:#67e8f9; font-weight:800; font-size:9px; letter-spacing:.06em;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  background:rgba(6,182,212,.08);
+  border:1px solid rgba(6,182,212,.25);
+  transition:.15s ease;
+  white-space:nowrap; overflow:hidden;
+}
+.btn-view:active{ transform:scale(.97); background:rgba(6,182,212,.18); }
+
+.btn-reset{
+  width:100%; height:36px; border-radius:10px; margin-top:6px;
+  color:#94a3b8; font-weight:800; font-size:8px; letter-spacing:.1em;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.05);
+  transition:.15s ease;
+}
+.btn-reset:active{ transform:scale(.98); background:rgba(239,68,68,.08); color:#f87171; border-color:rgba(239,68,68,.2); }
+
+/* Files card */
+.files-card{
+  flex:1; min-height:0; display:flex; flex-direction:column;
+  border-radius:16px; padding:0; overflow:hidden;
+}
+
+/* File item */
+.file-item{
+  border-radius:14px; margin-bottom:8px;
+  background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 4px 16px rgba(0,0,0,.25);
+  overflow:hidden;
+  transition:.2s ease;
+  flex:0 0 auto;
+}
+.file-item.dirty{
+  border-color: rgba(6,182,212,.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 4px 20px rgba(6,182,212,.15);
+}
+.file-info{
+  padding:8px 12px;
+  background: rgba(0,0,0,.2);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  display:flex; align-items:center; gap:8px;
+}
+.file-label{
+  flex:1; font-family:"Courier New",monospace; font-weight:800;
+  color:#67e8f9; font-size:10px;
+  word-break:break-all;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.dirty-mark{
+  color:#22d3ee; font-size:7px; font-weight:800;
+  visibility:hidden;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.file-item.dirty .dirty-mark{ visibility:visible; }
+
+/* Search row */
+.search-row{
+  display:flex; gap:5px; padding:8px 10px;
+  background:rgba(0,0,0,.15);
+  align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.search-input{
+  flex:1; height:38px; padding:0 10px; font-size:12px;
+  background:rgba(0,0,0,.35); color:#f8fafc;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:9px;
+  outline:none;
+  transition:.2s ease;
+  -webkit-user-select:text; user-select:text;
+}
+.search-input:focus{ border-color:rgba(6,182,212,.5); box-shadow:0 0 0 2px rgba(6,182,212,.08); }
+.search-input::placeholder{ color:#475569; }
+.search-btn{
+  height:38px; min-width:38px; padding:0 10px;
+  background:rgba(255,255,255,.04);
+  color:#67e8f9;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:9px;
+  font-weight:800; font-size:9px;
+  letter-spacing:.05em;
+  display:flex; align-items:center; justify-content:center;
+  transition:.15s ease;
+}
+.search-btn:active{ transform:scale(.92); background:rgba(6,182,212,.13); }
+.search-count{
+  font-size:9px; color:#64748b; min-width:44px; text-align:center;
+  font-family:"Courier New",monospace; font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
+
+/* History */
+.history-list{
+  display:none; background:rgba(0,0,0,.35);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  max-height:220px; overflow-y:auto;
+}
+.history-list::-webkit-scrollbar{ width:3px; }
+.history-list::-webkit-scrollbar-thumb{ background:rgba(6,182,212,.3); border-radius:2px; }
+.history-item{
+  padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:9px; cursor:pointer; transition:.15s ease;
+}
+.history-item:active{ background:rgba(6,182,212,.08); }
+.history-item:last-child{ border-bottom:none; }
+.history-date{ color:#67e8f9; font-weight:800; margin-bottom:3px; font-size:8px; }
+.history-msg{ color:#94a3b8; font-size:8.5px; line-height:1.4; }
+
+/* Editor box */
+.editor-box{
+  display:block; width:100%; height:320px;
+  background:rgba(0,0,0,.4);
+  color:#cbd5e1;
+  border:none; padding:10px 12px;
+  font-family:"Courier New",monospace;
+  font-size:12px; line-height:20px;
+  tab-size:4; outline:none;
+  resize:vertical; overflow:auto;
+  -webkit-user-select:text; user-select:text;
+  transition:.2s ease;
+}
+.editor-box:focus{ color:#f8fafc; background:rgba(0,0,0,.5); }
+.editor-box::-webkit-scrollbar{ width:6px; height:6px; }
+.editor-box::-webkit-scrollbar-thumb{ background:rgba(6,182,212,.3); border-radius:3px; }
+.editor-box::-webkit-scrollbar-track{ background:transparent; }
+
+/* Save row */
+.save-row{
+  padding:10px;
+  background:rgba(0,0,0,.15);
+  border-top:1px solid rgba(255,255,255,.05);
+  display:flex; flex-direction:column; gap:8px;
+}
+.commit-input{
+  width:100%; height:38px; padding:0 12px;
+  background:rgba(0,0,0,.35); color:#f8fafc;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:9px; font-size:11px; outline:none;
+  transition:.2s ease;
+  -webkit-user-select:text; user-select:text;
+}
+.commit-input:focus{ border-color:rgba(6,182,212,.5); box-shadow:0 0 0 2px rgba(6,182,212,.08); }
+.commit-input::placeholder{ color:#475569; }
+.save-buttons{ display:grid; grid-template-columns: 1fr 1.4fr; gap:6px; }
+.btn-history{
+  height:46px; border-radius:12px;
+  color:#94a3b8; font-weight:800; font-size:9px; letter-spacing:.06em;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  transition:.15s ease;
+}
+.btn-history:active{ transform:scale(.97); background:rgba(255,255,255,.08); }
+.btn-save{
+  height:46px; border-radius:12px;
+  color:white; font-weight:800; font-size:10px; letter-spacing:.08em;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  border:1px solid rgba(34,211,238,.4);
+  box-shadow: 0 6px 18px rgba(6,182,212,.3), inset 0 1px 0 rgba(255,255,255,.15);
+  transition:.15s ease;
+}
+.btn-save:active{ transform:scale(.97); }
+.btn-save:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+/* Empty state */
+.empty-state{
+  text-align:center; color:#475569; padding:40px 20px; font-size:10px;
+}
+.empty-state .ico{ font-size:36px; margin-bottom:12px; opacity:.5; }
+
+/* Confirm sheet */
+.confirm-sheet{
+  display:flex; flex-direction:column; gap:10px;
+  padding:14px; border-radius:14px;
+  background:rgba(0,0,0,.4);
+  border:1px solid rgba(6,182,212,.3);
+  font-size:11px; color:#f8fafc;
+  text-align:center;
+  animation: panelIn .25s ease;
+}
+@keyframes panelIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+.confirm-msg{ font-weight:800; font-size:12px; color:#67e8f9; letter-spacing:.05em; }
+.confirm-actions{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.confirm-btn{
+  height:48px; border-radius:12px; font-size:10px; font-weight:800;
+  letter-spacing:.08em; text-transform:uppercase;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid transparent;
+  transition:.15s ease;
+}
+.confirm-btn:active{ transform:scale(.95); }
+.confirm-btn.yes{
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color:white; border-color:rgba(34,211,238,.4);
+  box-shadow: 0 6px 18px rgba(6,182,212,.25);
+}
+.confirm-btn.no{
+  background:rgba(255,255,255,.05);
+  color:#94a3b8; border-color:rgba(255,255,255,.08);
+}
+
+/* ========================================================= SHEET ========================================================= */
+.sheet-overlay{
+  position:fixed; inset:0; z-index:10000;
+  background:rgba(0,0,0,.6);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  opacity:0; pointer-events:none; transition:.25s ease;
+}
+.sheet-overlay.open{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:10001;
+  max-height:82dvh; min-height:40dvh;
+  background: linear-gradient(180deg, rgba(15,18,25,.98), rgba(10,12,18,.99));
+  border-top:1px solid rgba(255,255,255,.1);
+  border-radius:22px 22px 0 0;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.7);
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.open{ transform: translateY(0); }
+.sheet-handle{
+  width:44px; height:4px; border-radius:2px;
+  background:rgba(255,255,255,.2);
+  margin:10px auto 6px auto; flex:0 0 auto;
+}
+.sheet-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:4px 18px 12px 18px; flex:0 0 auto;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.sheet-head-left{ display:flex; align-items:center; gap:12px; }
+.sheet-icon{
+  width:42px; height:42px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(6,182,212,.1); border:1px solid rgba(6,182,212,.25);
+  font-size:18px;
+}
+.sheet-title{ font-size:13px; font-weight:800; color:#a5f3fc; }
+.sheet-sub{ font-size:7px; text-transform:uppercase; letter-spacing:.16em; color:#0e7490; font-weight:700; margin-bottom:2px; }
+.sheet-close{
+  width:44px; height:44px; border-radius:12px;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+  color:#94a3b8; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+}
+.sheet-close:active{ background:rgba(255,255,255,.1); color:#f8fafc; }
+.sheet-body{
+  flex:1; min-height:0; overflow-y:auto;
+  padding:14px 18px 18px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.sheet-body::-webkit-scrollbar{ width:4px; }
+.sheet-body::-webkit-scrollbar-thumb{ background:rgba(6,182,212,.3); border-radius:2px; }
+
+.info-list{ display:flex; flex-direction:column; gap:10px; }
+.info-item{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 14px; border-radius:13px;
+  background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.05);
+}
+.info-item-icon{
+  flex:0 0 36px; width:36px; height:36px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(6,182,212,.1); border:1px solid rgba(6,182,212,.2);
+  font-size:16px;
+}
+.info-item-body{ min-width:0; flex:1; }
+.info-item-title{ font-size:10px; font-weight:800; color:#e2e8f0; margin-bottom:3px; }
+.info-item-desc{ font-size:8.5px; color:#94a3b8; line-height:1.55; }
+.info-footer{
+  margin-top:16px; text-align:center;
+  font-size:7px; color:#475569; letter-spacing:.14em; text-transform:uppercase;
+}
+
+/* ========================================================= TOAST ========================================================= */
+.toast-container{
+  position:fixed; z-index:99999;
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  left:12px; right:12px;
+  display:flex; flex-direction:column; gap:8px;
+  pointer-events:none;
+  max-width:660px; margin:0 auto;
+}
+.internal-toast{
+  pointer-events:auto;
+  padding:12px 14px; border-radius:12px;
+  background:rgba(15,23,42,.96);
+  border:1px solid rgba(6,182,212,.25);
+  border-left:4px solid #06b6d4;
+  color:#e2e8f0; font-size:10px; font-weight:700;
+  box-shadow: 0 15px 40px rgba(0,0,0,.6);
+  display:flex; align-items:center; justify-content:space-between;
+  backdrop-filter:blur(18px);
+  animation: toastSlide .25s cubic-bezier(.175,.885,.32,1.275);
+}
+.internal-toast.success-toast{ border-left-color:#4ade80; border-color:rgba(74,222,128,.25); }
+.internal-toast.danger-toast{ border-left-color:#f87171; border-color:rgba(248,113,113,.25); }
+.internal-toast.warning-toast{ border-left-color:#fcd34d; border-color:rgba(250,204,21,.25); }
+@keyframes toastSlide{
+  from{ opacity:0; transform: translateY(20px) scale(.95); }
+  to{ opacity:1; transform: translateY(0) scale(1); }
+}
+
+.footer{
+  height:14px; min-height:14px; display:flex; align-items:center; justify-content:center;
+  color:#334155; font-size:6px; letter-spacing:.14em; text-transform:uppercase;
+  margin-top:4px; flex:0 0 auto;
+}
+
+/* ========================================================= MOBILE ========================================================= */
+@media (max-height:700px){
+  .header{ height:40px; min-height:40px; margin-bottom:4px; }
+  .brand-logo{ width:28px; height:28px; flex-basis:28px; }
+  .brand-name{ font-size:12px; }
+  .header-btn{ width:38px; height:38px; flex-basis:38px; font-size:13px; }
+  .field, .small-btn, .repo-prefix, .repo-input, .repo-btn{ height:38px; font-size:11px; }
+  .btn-primary{ height:48px; font-size:10px; }
+  .editor-box{ height:240px; font-size:11px; }
+  .footer{ display:none; }
+  .status-badge{ display:none; }
+}
+@media (min-width:600px){
+  .app-inner{ max-width:720px; }
+}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body>
+
+<div class="aurora"><div class="orb"></div></div>
+<div class="noise"></div>
+
+<div class="app">
+  <div class="app-inner">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-logo"><span>S</span></div>
+        <div class="min-w-0">
+          <div class="brand-name">Snipercode</div>
+          <div class="brand-sub">Editor Pro</div>
+        </div>
+        <div id="saveIndicator" class="save-indicator"></div>
+      </div>
+      <div class="header-right">
+        <div id="statusBadge" class="status-badge">
+          <span class="dot"></span>
+          <span id="statusBadgeText">PRÊT</span>
+        </div>
+        <button class="header-btn" onclick="openSheet('info')" aria-label="Info">ⓘ</button>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main">
+      <!-- CONFIG CARD -->
+      <section class="card glass glass-accent">
+        <div class="section-head">
+          <div>
+            <div class="section-title">Connexion</div>
+            <div class="section-name">GitHub Access</div>
+          </div>
+          <div class="status-badge" style="pointer-events:none;" id="userBadge">
+            <span class="dot" style="background:#06b6d4; box-shadow:0 0 4px #06b6d4;"></span>
+            <span style="color:#67e8f9;" id="userBadgeText">SECURE</span>
+          </div>
+        </div>
+
+        <!-- Token row -->
+        <div class="token-row">
+          <input id="ghToken" class="field gh-token mono" type="password" placeholder="ghp_..." autocomplete="off" spellcheck="false">
+          <button class="small-btn" onclick="toggleTokenView(this)" title="Voir/Cacher">👁</button>
+          <button class="small-btn" onclick="pasteToken()" title="Coller">📋</button>
+        </div>
+
+        <!-- Repo row avec autocomplete -->
+        <div class="repo-wrap">
+          <div class="repo-input-row" id="repoInputRow">
+            <div class="repo-prefix empty" id="repoPrefix">…/</div>
+            <input id="repoInput" class="repo-input" type="text"
+                   placeholder="nom-du-repo"
+                   autocomplete="off" autocapitalize="none" spellcheck="false">
+            <button class="repo-btn" id="repoBtn" onclick="manualRefresh()" title="Rafraîchir la liste">⟳</button>
+          </div>
+          <div class="repo-dropdown" id="repoDropdown"></div>
+        </div>
+
+        <button class="btn-primary" id="loadBtn" onclick="fetchRepo()">
+          <span>⚡</span>
+          <span>CHARGER LE PROJET</span>
+        </button>
+
+        <div class="status-row">
+          <span class="status-dot status-indicator" id="statusDotLeft"></span>
+          <button class="btn-view" onclick="openProductionSite()">
+            <span>🌍</span>
+            <span>VOIR LE SITE LIVE</span>
+          </button>
+          <span class="status-dot status-indicator" id="statusDotRight"></span>
+        </div>
+
+        <button class="btn-reset" onclick="fullReset()">🗑 RESET & CLEAR CACHE</button>
+      </section>
+
+      <!-- FILES CONTAINER -->
+      <div class="files-card" id="filesCard">
+        <div class="repo-list-scroll" id="fileList" style="flex:1; min-height:0; overflow-y:auto; padding-right:2px;">
+          <div class="empty-state">
+            <div class="ico">🎯</div>
+            Aucun projet chargé.<br>
+            Colle ton token, choisis un dépôt<br>
+            puis clique sur "Charger le projet".
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">Snipercode · Laiche Brahim · Paris · 2026</footer>
+  </div>
+</div>
+
+<!-- ========================================================= SHEET INFO ========================================================= -->
+<div class="sheet-overlay" id="infoOverlay" onclick="closeSheet('info')"></div>
+<div class="sheet" id="infoSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="sheet-head-left">
+      <div class="sheet-icon">ⓘ</div>
+      <div>
+        <div class="sheet-sub">Guide</div>
+        <div class="sheet-title">À propos de Snipercode</div>
+      </div>
+    </div>
+    <button class="sheet-close" onclick="closeSheet('info')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="info-list">
+      <div class="info-item">
+        <div class="info-item-icon">🔑</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Token = ton compte</div>
+          <div class="info-item-desc">Dès que tu colles ton token GitHub, Snipercode récupère automatiquement ton pseudo et te propose <b>la liste de tous tes dépôts</b>.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">🎯</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Autocomplétion repo</div>
+          <div class="info-item-desc">Tape les premières lettres du nom du dépôt — la liste se filtre <b>en temps réel</b>. Navigue avec ↑ ↓ et valide avec Entrée.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">⚡</div>
+        <div class="info-item-body">
+          <div class="info-item-title">CHARGER LE PROJET</div>
+          <div class="info-item-desc">Récupère tous les fichiers texte de la racine du dépôt et les rend éditables.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">🔍</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Recherche + navigation</div>
+          <div class="info-item-desc">Tape ta requête puis FIND, et navigue avec ▲ ▼ entre les occurrences.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">⏪</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Historique</div>
+          <div class="info-item-desc">Consulte les 10 derniers commits du fichier et restaure n'importe quelle version.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">🚀</div>
+        <div class="info-item-body">
+          <div class="info-item-title">UPDATE CORE</div>
+          <div class="info-item-desc">Push le fichier sur GitHub. Le statut du déploiement est suivi en temps réel via GitHub Actions.</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-item-icon">⌨</div>
+        <div class="info-item-body">
+          <div class="info-item-title">Raccourcis</div>
+          <div class="info-item-desc"><b>Tab</b> indente · <b>Ctrl/Cmd+S</b> déploie · <b>Entrée</b> valide la recherche ou l'autocomplétion · <b>Échap</b> ferme</div>
+        </div>
+      </div>
+    </div>
+    <div class="info-footer">Made by Brahim Laiche · 2026 · Paris</div>
+  </div>
+</div>
+
+<script>
+/* ========================================================= CONSTANTES ========================================================= */
+const API = 'https://api.github.com';
+const LINE_HEIGHT = 20;
+const POLL_INTERVAL_MS = 4000;
+const POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const BINARY_REGEX = /\.(png|jpe?g|gif|webp|avif|bmp|ico|woff2?|ttf|otf|eot|pdf|zip|gz|mp3|mp4|webm|wav|ogg|mov)$/i;
+const LS_KEYS = {
+  TOKEN: 'snipercode_token',
+  REPO_NAME: 'snipercode_repo_name',
+  USER: 'snipercode_user',
+  REPOS_CACHE: 'snipercode_repos_cache'
+};
+
+const byId = (id) => document.getElementById(id);
+
+/* ========================================================= STORAGE ========================================================= */
+const store = (() => {
+  const mem = {};
+  let ls = null;
+  try { ls = window.localStorage; ls.setItem('__sc_test', '1'); ls.removeItem('__sc_test'); }
+  catch (e) { ls = null; }
+  return {
+    getItem(k) { try { if (ls) return ls.getItem(k); } catch (e) {} return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+    setItem(k, v) { try { if (ls) { ls.setItem(k, v); return; } } catch (e) {} mem[k] = String(v); },
+    removeItem(k) { try { if (ls) ls.removeItem(k); } catch (e) {} delete mem[k]; },
+    clear() { try { if (ls) ls.clear(); } catch (e) {} }
+  };
+})();
+
+/* ========================================================= STATE ========================================================= */
+let files = [];
+let globalRepoExact = "";
+let currentUser = "";         // Pseudo GitHub récupéré depuis le token
+let userRepos = [];           // Liste des dépôts de l'utilisateur
+let filteredRepos = [];       // Liste filtrée pour l'autocomplete
+let dropdownActiveIndex = -1;
+let statusInterval = null;
+let pollStartedAt = 0;
+let lastRunIdBeforeUpdate = null;
+let isSaving = false;
+let userFetchTimer = null;
+
+/* ========================================================= HAPTIC ========================================================= */
+function haptic(ms){ ms = ms || 8; try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+/* ========================================================= SAVE INDICATOR ========================================================= */
+let saveIndicatorTimer = null;
+function showSaveIndicator(){
+  const ind = byId('saveIndicator');
+  if(!ind) return;
+  ind.classList.add('show');
+  clearTimeout(saveIndicatorTimer);
+  saveIndicatorTimer = setTimeout(()=>{ ind.classList.remove('show'); }, 800);
+}
+
+/* ========================================================= UTILS ========================================================= */
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+function ghFetch(path, options = {}) {
+  const token = byId('ghToken').value.trim();
+  const url = path.startsWith('http') ? path : API + path;
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      ...(options.headers || {})
+    }
+  });
+}
+
+async function fetchRawFile(url) {
+  const res = await ghFetch(url, { headers: { 'Accept': 'application/vnd.github.raw+json' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.text();
+}
+
+function encodePath(path) {
+  return path.split('/').map(encodeURIComponent).join('/');
+}
+
+function highlightMatch(name, query) {
+  if (!query) return escapeHtml(name);
+  const idx = name.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return escapeHtml(name);
+  return escapeHtml(name.slice(0, idx))
+    + '<span class="match-hl">' + escapeHtml(name.slice(idx, idx + query.length)) + '</span>'
+    + escapeHtml(name.slice(idx + query.length));
+}
+
+/* ========================================================= TOAST ========================================================= */
+let toastContainer = null;
+function notify(message, type) {
+  type = type || 'info';
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'internal-toast';
+  if (type === 'success') toast.classList.add('success-toast');
+  else if (type === 'danger') toast.classList.add('danger-toast');
+  else if (type === 'warning') toast.classList.add('warning-toast');
+  const icons = { success: '✓', danger: '⚠', warning: '⚡', info: '›' };
+  toast.innerHTML = '<span>' + (icons[type] || '›') + ' ' + escapeHtml(message) + '</span>';
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px) scale(0.95)';
+    toast.style.transition = '.25s ease';
+    setTimeout(() => toast.remove(), 250);
+  }, 3200);
+}
+
+/* ========================================================= SHEETS ========================================================= */
+function openSheet(name) {
+  byId(name + 'Overlay').classList.add('open');
+  byId(name + 'Sheet').classList.add('open');
+  haptic(6);
+}
+function closeSheet(name) {
+  byId(name + 'Overlay').classList.remove('open');
+  byId(name + 'Sheet').classList.remove('open');
+}
+['info'].forEach(function(name){
+  var sheet = byId(name + 'Sheet');
+  if (!sheet) return;
+  var startY = 0, currentY = 0, dragging = false;
+  sheet.addEventListener('touchstart', function(e){
+    if (e.target.closest('.sheet-body')) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+  sheet.addEventListener('touchmove', function(e){
+    if (!dragging) return;
+    currentY = e.touches[0].clientY - startY;
+    if (currentY > 0) sheet.style.transform = 'translateY(' + currentY + 'px)';
+  }, { passive: true });
+  sheet.addEventListener('touchend', function(){
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    sheet.style.transform = '';
+    if (currentY > 100) closeSheet(name);
+    currentY = 0;
+  });
+});
+
+/* ========================================================= TOKEN VIEW / PASTE ========================================================= */
+function toggleTokenView(btn){
+  const input = byId('ghToken');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+  else { input.type = 'password'; btn.textContent = '👁'; }
+}
+async function pasteToken(){
+  try {
+    const text = (await navigator.clipboard.readText()).trim();
+    if (!text) { notify('Presse-papier vide', 'danger'); return; }
+    byId('ghToken').value = text;
+    onTokenChanged();
+    notify('Token collé', 'success');
+  } catch(e) { notify('Presse-papiers refusé', 'danger'); }
+}
+
+/* ========================================================= USER LOADING ========================================================= */
+/* Quand le token change, on récupère automatiquement le pseudo GitHub
+   puis la liste des dépôts. L'utilisateur n'a qu'à taper le nom du repo. */
+function onTokenChanged(){
+  store.setItem(LS_KEYS.TOKEN, byId('ghToken').value);
+  showSaveIndicator();
+
+  clearTimeout(userFetchTimer);
+  /* Délai anti-rebond : évite de spammer l'API pendant la frappe */
+  userFetchTimer = setTimeout(() => {
+    const token = byId('ghToken').value.trim();
+    if (!token || token.length < 20) {
+      /* Token trop court pour être valide → reset */
+      currentUser = '';
+      userRepos = [];
+      updateUserBadge();
+      updateRepoPrefix();
+      return;
+    }
+    loadUserAndRepos();
+  }, 500);
+}
+
+async function loadUserAndRepos(){
+  const token = byId('ghToken').value.trim();
+  if (!token) return;
+
+  updateUserBadge('…', 'loading');
+
+  try {
+    /* 1) Récupère le pseudo */
+    const userRes = await fetch(API + '/user', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!userRes.ok) {
+      currentUser = '';
+      userRepos = [];
+      updateUserBadge('ERR', 'error');
+      updateRepoPrefix();
+      if (userRes.status === 401) notify('Token invalide', 'danger');
+      return;
+    }
+    const user = await userRes.json();
+    currentUser = user.login;
+    store.setItem(LS_KEYS.USER, currentUser);
+    updateUserBadge();
+    updateRepoPrefix();
+    showSaveIndicator();
+
+    /* 2) Récupère tous les dépôts (avec pagination) */
+    updateUserBadge('CHARGEMENT', 'loading');
+    const all = [];
+    let url = API + '/user/repos?per_page=100&sort=updated&direction=desc&affiliation=owner,collaborator,organization_member';
+    let pageCount = 0;
+    while (url && pageCount < 20) {
+      pageCount++;
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) break;
+      const data = await res.json();
+      if (Array.isArray(data)) data.forEach(r => all.push(r));
+      const link = res.headers.get('Link') || res.headers.get('link') || '';
+      url = null;
+      if (link) {
+        const m = link.match(/<([^>]+)>;\s*rel="next"/);
+        if (m) url = m[1];
+      }
+    }
+    userRepos = all;
+    store.setItem(LS_KEYS.REPOS_CACHE, JSON.stringify(userRepos.map(r => ({
+      name: r.name,
+      full_name: r.full_name,
+      default_branch: r.default_branch,
+      private: r.private,
+      owner: { login: r.owner.login }
+    }))));
+    updateUserBadge();
+    updateRepoPrefix();
+    /* Restaure le nom du repo sauvegardé */
+    restoreSavedRepoName();
+  } catch (e) {
+    console.error(e);
+    updateUserBadge('ERR', 'error');
+    notify('Erreur réseau', 'danger');
+  }
+}
+
+function updateUserBadge(text, state){
+  const badge = byId('userBadge');
+  const txt = byId('userBadgeText');
+  badge.classList.remove('ready', 'loading', 'error');
+  if (state === 'loading') badge.classList.add('loading');
+  else if (state === 'error') badge.classList.add('error');
+  else if (currentUser) badge.classList.add('ready');
+
+  if (state === 'loading') txt.textContent = text || 'CHARGEMENT';
+  else if (state === 'error') txt.textContent = text || 'ERR';
+  else if (currentUser) txt.textContent = '@' + currentUser;
+  else txt.textContent = 'SECURE';
+}
+
+function updateRepoPrefix(){
+  const prefix = byId('repoPrefix');
+  if (currentUser) {
+    prefix.textContent = currentUser + '/';
+    prefix.classList.remove('empty');
+  } else {
+    prefix.textContent = '…/';
+    prefix.classList.add('empty');
+  }
+}
+
+/* ========================================================= REPO AUTOCOMPLETE ========================================================= */
+function openRepoDropdown(){
+  const dropdown = byId('repoDropdown');
+  const q = byId('repoInput').value.trim().toLowerCase();
+
+  if (!currentUser || userRepos.length === 0) {
+    /* Pas encore de user/repos chargés */
+    dropdown.innerHTML = '<div class="repo-dropdown-empty">Colle un token valide pour voir tes dépôts</div>';
+    dropdown.classList.add('open');
+    return;
+  }
+
+  filteredRepos = q
+    ? userRepos.filter(r => r.name.toLowerCase().includes(q))
+    : userRepos;
+
+  /* Tri : les dépôts qui commencent par la query en premier */
+  if (q) {
+    filteredRepos = filteredRepos.slice().sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  dropdownActiveIndex = filteredRepos.length > 0 ? 0 : -1;
+
+  if (filteredRepos.length === 0) {
+    dropdown.innerHTML = '<div class="repo-dropdown-empty">Aucun dépôt ne correspond</div>';
+  } else {
+    dropdown.innerHTML = filteredRepos.map((r, i) =>
+      '<div class="repo-option' + (i === dropdownActiveIndex ? ' active' : '') + '" data-idx="' + i + '">' +
+        '<span class="repo-option-name">' + highlightMatch(r.name, q) + '</span>' +
+        '<span class="repo-option-meta">' +
+          (r.private ? '<span class="repo-option-private">🔒</span>' : '') +
+          '<span class="repo-option-branch">' + escapeHtml(r.default_branch || 'main') + '</span>' +
+        '</span>' +
+      '</div>'
+    ).join('');
+  }
+
+  dropdown.classList.add('open');
+
+  /* Clic sur une option */
+  dropdown.querySelectorAll('.repo-option').forEach(el => {
+    el.addEventListener('click', () => {
+      selectRepo(parseInt(el.dataset.idx, 10));
+    });
+    el.addEventListener('mouseenter', () => {
+      dropdownActiveIndex = parseInt(el.dataset.idx, 10);
+      updateDropdownActive();
+    });
+  });
+}
+
+function updateDropdownActive(){
+  const dropdown = byId('repoDropdown');
+  const options = dropdown.querySelectorAll('.repo-option');
+  options.forEach((el, i) => {
+    el.classList.toggle('active', i === dropdownActiveIndex);
+  });
+  const active = options[dropdownActiveIndex];
+  if (active && active.scrollIntoView) {
+    active.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function closeRepoDropdown(){
+  byId('repoDropdown').classList.remove('open');
+  dropdownActiveIndex = -1;
+}
+
+function selectRepo(idx){
+  if (idx < 0 || idx >= filteredRepos.length) return;
+  const repo = filteredRepos[idx];
+  byId('repoInput').value = repo.name;
+  store.setItem(LS_KEYS.REPO_NAME, repo.name);
+  closeRepoDropdown();
+  haptic(8);
+}
+
+function restoreSavedRepoName(){
+  const saved = store.getItem(LS_KEYS.REPO_NAME);
+  if (saved) byId('repoInput').value = saved;
+}
+
+/* Rafraîchit manuellement la liste des dépôts */
+async function manualRefresh(){
+  if (!currentUser) {
+    notify('Token requis', 'warning');
+    return;
+  }
+  const btn = byId('repoBtn');
+  btn.classList.add('loading');
+  haptic(8);
+  try {
+    await loadUserAndRepos();
+    notify('Liste rafraîchie', 'success');
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+/* ========================================================= STATUS BADGE ========================================================= */
+function setStatusClass(className) {
+  const badge = byId('statusBadge');
+  const txt = byId('statusBadgeText');
+  badge.classList.remove('ready', 'loading', 'success', 'error');
+  if (className) badge.classList.add(className);
+
+  const labels = { '': 'PRÊT', 'ready': 'PRÊT', 'loading': 'BUSY', 'success': 'OK', 'error': 'ERR' };
+  txt.textContent = labels[className] || 'PRÊT';
+
+  document.querySelectorAll('.status-indicator').forEach((dot) => {
+    dot.className = 'status-dot status-indicator ' + (className || '');
+  });
+}
+
+/* ========================================================= OPEN LIVE SITE ========================================================= */
+function openProductionSite() {
+  if (!globalRepoExact) { notify("Aucun repo chargé", 'warning'); return; }
+  const [owner, name] = globalRepoExact.split('/');
+  const isUserSite = name.toLowerCase() === `${owner.toLowerCase()}.github.io`;
+  const base = `https://${owner.toLowerCase()}.github.io/${isUserSite ? '' : name + '/'}`;
+  window.open(`${base}?t=${Date.now()}`, '_blank', 'noopener');
+}
+
+/* ========================================================= STATUS POLLING ========================================================= */
+async function getLatestRun() {
+  const res = await ghFetch(`/repos/${globalRepoExact}/actions/runs?per_page=1`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return (data.workflow_runs && data.workflow_runs[0]) || null;
+}
+
+async function updateActionStatus() {
+  if (!globalRepoExact) return;
+  if (Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
+    clearInterval(statusInterval);
+    setStatusClass('');
+    notify("Aucun workflow détecté", 'warning');
+    return;
+  }
+  try {
+    const lastRun = await getLatestRun();
+    if (!lastRun) return;
+    if (lastRun.id === lastRunIdBeforeUpdate) { setStatusClass('loading'); return; }
+    if (lastRun.status === 'completed') {
+      const ok = lastRun.conclusion === 'success';
+      setStatusClass(ok ? 'success' : 'error');
+      lastRunIdBeforeUpdate = lastRun.id;
+      clearInterval(statusInterval);
+      notify(ok ? 'Déploiement réussi' : 'Déploiement échoué', ok ? 'success' : 'danger');
+    } else {
+      setStatusClass('loading');
+    }
+  } catch (e) { console.error(e); }
+}
+
+function startStatusPolling() {
+  setStatusClass('loading');
+  clearInterval(statusInterval);
+  pollStartedAt = Date.now();
+  statusInterval = setInterval(updateActionStatus, POLL_INTERVAL_MS);
+}
+
+/* ========================================================= FETCH REPO ========================================================= */
+async function fetchRepo() {
+  const token = byId('ghToken').value.trim();
+  const repoName = byId('repoInput').value.trim();
+
+  if (!token) { notify("Token manquant", 'warning'); return; }
+  if (!currentUser) { notify("Identifie-toi (token valide) d'abord", 'warning'); return; }
+  if (!repoName) { notify("Choisis un dépôt", 'warning'); return; }
+
+  /* Construit le full name (owner/repo) */
+  const fullRepo = currentUser + '/' + repoName;
+
+  if (files.some((f) => f.dirty) && !confirm("Des modifications non déployées seront perdues. Continuer ?")) return;
+
+  const loadBtn = byId('loadBtn');
+  loadBtn.disabled = true;
+  setStatusClass('loading');
+  notify("Chargement...", 'warning');
+
+  try {
+    const metaRes = await ghFetch(`/repos/${fullRepo}`);
+    if (!metaRes.ok) {
+      if (metaRes.status === 401) notify("Token invalide", 'danger');
+      else if (metaRes.status === 404) notify("Repo introuvable", 'danger');
+      else notify(`Erreur ${metaRes.status}`, 'danger');
+      setStatusClass('error');
+      return;
+    }
+    const meta = await metaRes.json();
+    globalRepoExact = meta.full_name;
+    store.setItem(LS_KEYS.REPO_NAME, meta.name);
+
+    /* Statut du dernier déploiement */
+    clearInterval(statusInterval);
+    const lastRun = await getLatestRun();
+    if (lastRun) {
+      lastRunIdBeforeUpdate = lastRun.id;
+      setStatusClass(lastRun.status === 'completed'
+        ? (lastRun.conclusion === 'success' ? 'success' : 'error')
+        : 'loading');
+    } else {
+      lastRunIdBeforeUpdate = null;
+      setStatusClass('');
+    }
+
+    /* Liste des fichiers à la racine */
+    const listRes = await ghFetch(`/repos/${globalRepoExact}/contents/`);
+    const list = await listRes.json();
+    if (!Array.isArray(list)) throw new Error("Contenu illisible");
+
+    const textFiles = list.filter((f) => f.type === 'file' && !BINARY_REGEX.test(f.name));
+    const results = await Promise.allSettled(textFiles.map((f) => fetchRawFile(f.url)));
+
+    files = [];
+    byId('fileList').innerHTML = '';
+    let failed = 0;
+
+    results.forEach((result, i) => {
+      if (result.status !== 'fulfilled') { failed++; return; }
+      const f = textFiles[i];
+      const file = {
+        sha: f.sha,
+        path: f.path,
+        name: f.name,
+        original: result.value,
+        matches: [],
+        currentIndex: -1,
+        scannedQuery: null,
+        scannedText: null,
+        dirty: false
+      };
+      files.push(file);
+      renderFileCard(files.length - 1);
+    });
+
+    if (failed) notify(`Synchronisé (${failed} fichier(s) en échec)`, 'warning');
+    else notify("Projet synchronisé", 'success');
+  } catch (e) {
+    console.error(e);
+    notify("Erreur de connexion", 'danger');
+    setStatusClass('error');
+  } finally {
+    loadBtn.disabled = false;
+  }
+}
+
+/* ========================================================= RENDER FILE CARD ========================================================= */
+function renderFileCard(idx) {
+  const file = files[idx];
+  const div = document.createElement('div');
+  div.className = 'file-item';
+  div.id = `card-${idx}`;
+
+  div.innerHTML = `
+    <div class="file-info">
+      <span class="file-label">${escapeHtml(file.name)}</span>
+      <span class="dirty-mark">● modifié</span>
+    </div>
+    <div class="search-row">
+      <input type="text" id="in-${idx}" class="search-input" placeholder="Rechercher..." autocomplete="off" autocapitalize="none" spellcheck="false">
+      <button class="search-btn" onclick="scan(${idx})">FIND</button>
+      <button class="search-btn" onclick="prevMatch(${idx})" aria-label="Précédent">▲</button>
+      <button class="search-btn" onclick="nextMatch(${idx})" aria-label="Suivant">▼</button>
+      <div class="search-count" id="count-${idx}">0/0</div>
+    </div>
+    <textarea id="txt-${idx}" class="editor-box" spellcheck="false" wrap="off"></textarea>
+    <div id="hist-${idx}" class="history-list"></div>
+    <div class="save-row">
+      <input type="text" id="msg-${idx}" class="commit-input" placeholder="Message de commit (optionnel)" autocomplete="off">
+      <div class="save-buttons">
+        <button class="btn-history" onclick="toggleHistory(${idx})">HISTORIQUE</button>
+        <button class="btn-save" id="save-${idx}" onclick="prepareSave(${idx})">🚀 UPDATE CORE</button>
+      </div>
+    </div>
+  `;
+  byId('fileList').appendChild(div);
+
+  const textarea = byId(`txt-${idx}`);
+  textarea.value = file.original;
+
+  textarea.addEventListener('input', () => updateDirty(idx));
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      document.execCommand('insertText', false, '    ');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      prepareSave(idx);
+    }
+  });
+
+  byId(`in-${idx}`).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); scan(idx); }
+  });
+}
+
+function updateDirty(idx) {
+  const file = files[idx];
+  file.dirty = byId(`txt-${idx}`).value !== file.original;
+  byId(`card-${idx}`).classList.toggle('dirty', file.dirty);
+}
+
+/* ========================================================= SEARCH ========================================================= */
+function scan(idx) {
+  const file = files[idx];
+  const query = byId(`in-${idx}`).value;
+  const text = byId(`txt-${idx}`).value;
+
+  file.scannedQuery = query;
+  file.scannedText = text;
+
+  if (!query) {
+    file.matches = [];
+    file.currentIndex = -1;
+    updateCounter(idx);
+    return;
+  }
+
+  const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  const matches = [];
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    matches.push({ s: m.index, e: m.index + m[0].length });
+    if (m[0].length === 0) regex.lastIndex++;
+  }
+
+  file.matches = matches;
+  file.currentIndex = matches.length > 0 ? 0 : -1;
+  updateCounter(idx);
+
+  if (matches.length > 0) focusMatch(idx);
+  else notify("Aucun résultat", 'warning');
+}
+
+function ensureFreshScan(idx) {
+  const file = files[idx];
+  const query = byId(`in-${idx}`).value;
+  const text = byId(`txt-${idx}`).value;
+  if (file.scannedQuery !== query || file.scannedText !== text) {
+    scan(idx);
+    return false;
+  }
+  return true;
+}
+
+function focusMatch(idx) {
+  const file = files[idx];
+  if (file.matches.length === 0 || file.currentIndex < 0) return;
+  const match = file.matches[file.currentIndex];
+  const textarea = byId(`txt-${idx}`);
+  textarea.focus();
+  textarea.setSelectionRange(match.s, match.e);
+  const line = textarea.value.slice(0, match.s).split('\n').length - 1;
+  textarea.scrollTop = Math.max(0, line * LINE_HEIGHT - textarea.clientHeight / 2);
+  updateCounter(idx);
+}
+
+function nextMatch(idx) {
+  if (!ensureFreshScan(idx)) return;
+  const file = files[idx];
+  if (file.matches.length === 0) return;
+  file.currentIndex = (file.currentIndex + 1) % file.matches.length;
+  focusMatch(idx);
+}
+
+function prevMatch(idx) {
+  if (!ensureFreshScan(idx)) return;
+  const file = files[idx];
+  if (file.matches.length === 0) return;
+  file.currentIndex = (file.currentIndex - 1 + file.matches.length) % file.matches.length;
+  focusMatch(idx);
+}
+
+function updateCounter(idx) {
+  const file = files[idx];
+  byId(`count-${idx}`).innerText = file.matches.length > 0
+    ? `${file.currentIndex + 1}/${file.matches.length}`
+    : "0/0";
+}
+
+/* ========================================================= HISTORY ========================================================= */
+async function toggleHistory(idx) {
+  const historyDiv = byId(`hist-${idx}`);
+  if (historyDiv.style.display === 'block') { historyDiv.style.display = 'none'; return; }
+
+  const file = files[idx];
+  notify("Lecture logs...", 'warning');
+
+  try {
+    const res = await ghFetch(`/repos/${globalRepoExact}/commits?path=${encodeURIComponent(file.path)}&per_page=10`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const commits = await res.json();
+
+    historyDiv.innerHTML = '';
+
+    if (!Array.isArray(commits) || commits.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'history-item';
+      empty.textContent = 'Aucun log';
+      historyDiv.appendChild(empty);
+    } else {
+      commits.forEach((c) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        const date = document.createElement('div');
+        date.className = 'history-date';
+        date.textContent = new Date(c.commit.author.date).toLocaleString();
+
+        const msg = document.createElement('div');
+        msg.className = 'history-msg';
+        msg.textContent = c.commit.message.split('\n')[0];
+
+        item.append(date, msg);
+        item.addEventListener('click', () => loadOldVersion(idx, c.sha));
+        historyDiv.appendChild(item);
+      });
+    }
+    historyDiv.style.display = 'block';
+  } catch (e) {
+    console.error(e);
+    notify("Erreur logs", 'danger');
+  }
+}
+
+async function loadOldVersion(idx, commitSha) {
+  const file = files[idx];
+  try {
+    const oldContent = await fetchRawFile(`${API}/repos/${globalRepoExact}/contents/${encodePath(file.path)}?ref=${commitSha}`);
+    byId(`txt-${idx}`).value = oldContent;
+    updateDirty(idx);
+    byId(`hist-${idx}`).style.display = 'none';
+    notify("Version restaurée (non déployée)", 'success');
+  } catch (e) {
+    console.error(e);
+    notify("Erreur restauration", 'danger');
+  }
+}
+
+/* ========================================================= SAVE / DEPLOY ========================================================= */
+function prepareSave(idx) {
+  if (isSaving) return;
+  if (!files[idx].dirty) { notify("Aucune modification à déployer", 'warning'); return; }
+  showConfirmSheet("Déployer les modifications ?", () => executeUpdate(idx));
+}
+
+function showConfirmSheet(message, callback) {
+  const existing = byId('confirmSheet');
+  if (existing) existing.remove();
+
+  const sheet = document.createElement('div');
+  sheet.id = 'confirmSheet';
+  sheet.className = 'confirm-sheet';
+  sheet.innerHTML = `
+    <div class="confirm-msg">${escapeHtml(message)}</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn no" id="confirmNo">ANNULER</button>
+      <button class="confirm-btn yes" id="confirmYes">CONFIRMER</button>
+    </div>
+  `;
+  document.querySelector('.app-inner').appendChild(sheet);
+
+  byId('confirmNo').onclick = () => { sheet.remove(); haptic(6); };
+  byId('confirmYes').onclick = () => { sheet.remove(); haptic(10); callback(); };
+  sheet.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+async function executeUpdate(idx) {
+  if (isSaving) return;
+  isSaving = true;
+
+  const file = files[idx];
+  const content = byId(`txt-${idx}`).value;
+  const message = byId(`msg-${idx}`).value.trim() || "Sniper Core Update";
+  const saveBtn = byId(`save-${idx}`);
+  saveBtn.disabled = true;
+
+  try {
+    const lastRun = await getLatestRun();
+    lastRunIdBeforeUpdate = lastRun ? lastRun.id : null;
+
+    const res = await ghFetch(`/repos/${globalRepoExact}/contents/${encodePath(file.path)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, content: utf8ToBase64(content), sha: file.sha })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      file.sha = data.content.sha;
+      file.original = content;
+      updateDirty(idx);
+      byId(`msg-${idx}`).value = "";
+      notify("Push réussi", 'success');
+      startStatusPolling();
+    } else if (res.status === 409 || res.status === 422) {
+      notify("Conflit : fichier modifié sur GitHub. Rechargez.", 'danger');
+    } else if (res.status === 401 || res.status === 403 || res.status === 404) {
+      notify("Accès refusé (vérifiez les droits du token)", 'danger');
+    } else {
+      notify(`Erreur push (${res.status})`, 'danger');
+    }
+  } catch (e) {
+    console.error(e);
+    notify("Erreur push", 'danger');
+  } finally {
+    isSaving = false;
+    saveBtn.disabled = false;
+  }
+}
+
+/* ========================================================= RESET ========================================================= */
+async function fullReset() {
+  if (!confirm("Voulez-vous vraiment effacer le token, le cache et le service worker ?")) return;
+  try { store.clear(); } catch (e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch (e) { console.error(e); }
+  location.reload();
+}
+
+/* ========================================================= KEYBOARD ========================================================= */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeSheet('info');
+    closeRepoDropdown();
+    const sheet = byId('confirmSheet');
+    if (sheet) sheet.remove();
+  }
+});
+
+window.addEventListener('beforeunload', (e) => {
+  if (files.some((f) => f.dirty)) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ========================================================= INIT ========================================================= */
+(function init(){
+  /* Restaure le token */
+  const savedToken = store.getItem(LS_KEYS.TOKEN);
+  if (savedToken) {
+    byId('ghToken').value = savedToken;
+    /* Charge le user + repos dès le démarrage */
+    setTimeout(loadUserAndRepos, 200);
+  }
+
+  /* Restaure le pseudo en cache */
+  const cachedUser = store.getItem(LS_KEYS.USER);
+  if (cachedUser) {
+    currentUser = cachedUser;
+    updateUserBadge();
+    updateRepoPrefix();
+  }
+
+  /* Restaure la liste de repos en cache (affichage instantané) */
+  const cachedRepos = store.getItem(LS_KEYS.REPOS_CACHE);
+  if (cachedRepos) {
+    try { userRepos = JSON.parse(cachedRepos); } catch(e){}
+  }
+
+  /* Restaure le nom du repo */
+  restoreSavedRepoName();
+
+  setStatusClass('');
+
+  /* ========================================================= LISTENERS ========================================================= */
+  const tokenInput = byId('ghToken');
+  const repoInput = byId('repoInput');
+  const repoDropdown = byId('repoDropdown');
+  const repoInputRow = byId('repoInputRow');
+
+  /* Token → recharge user + repos */
+  tokenInput.addEventListener('input', onTokenChanged);
+
+  /* Focus visuel sur le repo row */
+  repoInput.addEventListener('focus', () => {
+    repoInputRow.classList.add('focused');
+    openRepoDropdown();
+  });
+  repoInput.addEventListener('blur', () => {
+    repoInputRow.classList.remove('focused');
+    /* Délai pour laisser le clic sur une option se faire */
+    setTimeout(() => closeRepoDropdown(), 180);
+  });
+
+  /* Autocomplete : filtre à la frappe */
+  repoInput.addEventListener('input', () => {
+    store.setItem(LS_KEYS.REPO_NAME, repoInput.value);
+    showSaveIndicator();
+    openRepoDropdown();
+  });
+
+  /* Navigation clavier */
+  repoInput.addEventListener('keydown', (e) => {
+    const isOpen = repoDropdown.classList.contains('open');
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) { openRepoDropdown(); return; }
+      if (filteredRepos.length === 0) return;
+      dropdownActiveIndex = (dropdownActiveIndex + 1) % filteredRepos.length;
+      updateDropdownActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) return;
+      if (filteredRepos.length === 0) return;
+      dropdownActiveIndex = (dropdownActiveIndex - 1 + filteredRepos.length) % filteredRepos.length;
+      updateDropdownActive();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && dropdownActiveIndex >= 0) {
+        selectRepo(dropdownActiveIndex);
+      } else {
+        fetchRepo();
+      }
+    } else if (e.key === 'Escape') {
+      closeRepoDropdown();
+    }
+  });
+
+  /* Ferme le dropdown si on clique ailleurs */
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.repo-wrap')) closeRepoDropdown();
+  });
+
+  /* Service Worker */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
